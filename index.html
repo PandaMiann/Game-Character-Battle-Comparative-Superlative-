@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Game Character Battle</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg-color:#f7f9fa;--text-main:#3c3c3c;--text-muted:#afafaf;
+  --primary:#1cb0f6;--primary-shadow:#1899d6;
+  --secondary:#58a700;--secondary-shadow:#468700;
+  --danger:#ff4b4b;--danger-shadow:#ea2b2b;
+  --team1:#ce82ff;--team2:#ff9600;
+  --card-border:#e5e5e5;
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Nunito',sans-serif;user-select:none}
+body{background:var(--bg-color);color:var(--text-main);height:100vh;width:100vw;overflow:hidden;position:relative}
+.hidden{display:none !important}
+h1,h2,h3{font-weight:800}
+.title{font-size:clamp(2rem,5vw,3rem);text-align:center;margin-bottom:1rem}
+.subtitle{font-size:1.4rem;color:var(--text-muted);text-align:center;margin-bottom:1.5rem;font-weight:700}
+
+button{border:none;border-radius:16px;font-size:1.25rem;font-weight:800;cursor:pointer;transition:all .1s;
+  text-transform:uppercase;letter-spacing:1px;padding:1rem 2rem;color:#fff;background:var(--primary);box-shadow:0 6px 0 var(--primary-shadow)}
+button:active:not(:disabled){transform:translateY(6px);box-shadow:none}
+.btn-large{font-size:clamp(1.3rem,3vw,2rem);padding:1.1rem 3rem;border-radius:24px;box-shadow:0 8px 0 var(--primary-shadow)}
+.btn-large:active:not(:disabled){transform:translateY(8px);box-shadow:none}
+.btn-success{background:var(--secondary);box-shadow:0 6px 0 var(--secondary-shadow)}
+.btn-success.btn-large{box-shadow:0 8px 0 var(--secondary-shadow)}
+.btn-danger{background:var(--danger);box-shadow:0 6px 0 var(--danger-shadow)}
+.btn-danger.btn-large{box-shadow:0 8px 0 var(--danger-shadow)}
+.btn-light{background:#fff;color:var(--text-main);border:2px solid var(--card-border);box-shadow:0 6px 0 var(--card-border)}
+
+/* Sound button: fixed bottom-left, never overlaps the scores */
+.btn-sound{position:fixed;bottom:16px;left:16px;padding:.6rem 1rem;font-size:1rem;border-radius:12px;background:#fff;
+  color:var(--text-muted);border:2px solid var(--card-border);box-shadow:0 4px 0 var(--card-border);z-index:300;text-transform:none;letter-spacing:0}
+.btn-sound.active{color:var(--primary);border-color:var(--primary)}
+
+input{background:#fff;border:2px solid var(--card-border);padding:1rem;font-size:1.5rem;text-align:center;border-radius:16px;
+  margin:.5rem;width:100%;max-width:300px;font-weight:700}
+input:focus{outline:none;border-color:var(--primary)}
+
+.screen{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;
+  position:absolute;top:0;left:0;padding:5.5rem 1.5rem 1.5rem;background:var(--bg-color);overflow-y:auto}
+
+#top-bar{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;
+  padding:.8rem 2rem;background:#fff;z-index:50;border-bottom:2px solid var(--card-border)}
+.score-box{font-size:1.5rem;font-weight:800;padding:.4rem 1.5rem;border-radius:16px}
+.score-t1{color:var(--team1);border:2px solid var(--team1)}
+.score-t2{color:var(--team2);border:2px solid var(--team2)}
+.score-group{display:flex;align-items:center;gap:8px}
+.adj{font-size:.85rem;padding:.45rem .8rem;border-radius:10px;text-transform:none;letter-spacing:0;box-shadow:0 3px 0 rgba(0,0,0,.2)}
+.adj:active:not(:disabled){transform:translateY(3px);box-shadow:none}
+.adj-minus{background:var(--danger)}
+.adj-plus{background:var(--secondary)}
+.round-box{color:var(--text-muted);font-size:1.5rem;font-weight:800}
+
+/* Character visual: emoji underneath, image on top (if it loads) */
+.visual{position:relative;width:100%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;
+  border-bottom:2px solid var(--card-border);overflow:hidden}
+.visual .emoji{font-size:clamp(3rem,10vh,6rem)}
+.visual img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#f0f0f0}
+.visual.has-img .emoji{display:none}
+
+/* Fight cards scale with screen height so FIGHT button always fits */
+.cards-wrapper{display:flex;justify-content:center;gap:clamp(1rem,4vw,4rem);width:100%;margin:.5rem 0 1rem}
+.character-card{background:#fff;border:4px dashed var(--card-border);border-radius:24px;width:min(320px,30vw);
+  height:min(440px,46vh);display:flex;flex-direction:column;align-items:center;cursor:pointer;
+  transition:all .2s;overflow:hidden;padding-bottom:.6rem}
+.character-card .visual{flex:1;min-height:0}
+.character-card:hover{transform:scale(1.02);border-color:var(--primary)}
+.character-card.filled{border-style:solid;box-shadow:0 8px 16px rgba(0,0,0,.05)}
+.card-team1{border-color:var(--team1)}
+.card-team2{border-color:var(--team2)}
+.card-name{font-size:clamp(1.2rem,3vh,2rem);font-weight:800;margin-top:.5rem;text-align:center}
+.card-stat-value{font-size:clamp(1.8rem,5vh,3.5rem);font-weight:900;display:none;color:#fff;background:var(--primary);
+  padding:0 2rem;border-radius:16px;margin-top:.3rem}
+.fight-actions{min-height:90px;display:flex;align-items:center;justify-content:center;gap:20px;padding-bottom:12px}
+
+@keyframes bumpLeft{0%{transform:translateX(0)}50%{transform:translateX(40px) rotate(5deg)}100%{transform:translateX(0)}}
+@keyframes bumpRight{0%{transform:translateX(0)}50%{transform:translateX(-40px) rotate(-5deg)}100%{transform:translateX(0)}}
+.anim-bump-left{animation:bumpLeft .4s ease-in-out}
+.anim-bump-right{animation:bumpRight .4s ease-in-out}
+.loser-card{filter:grayscale(1) opacity(.5);transform:scale(.95) !important;border-color:var(--card-border) !important}
+.winner-card{transform:scale(1.05) !important;border-width:6px;border-color:var(--secondary) !important;box-shadow:0 0 0 10px rgba(88,167,0,.2)}
+
+/* Modals */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:flex;align-items:center;justify-content:center}
+.modal-content{background:#fff;border-radius:24px;padding:1.5rem;width:92%;max-width:1000px;max-height:90vh;display:flex;
+  flex-direction:column;box-shadow:0 10px 25px rgba(0,0,0,.15);animation:slideUp .3s ease-out}
+@keyframes slideUp{from{transform:translateY(60px);opacity:0}to{transform:none;opacity:1}}
+.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;gap:10px}
+.char-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:1rem;overflow-y:auto;padding:.5rem}
+.grid-item{background:#fff;border:2px solid var(--card-border);border-radius:16px;overflow:hidden;cursor:pointer;
+  transition:all .2s;display:flex;flex-direction:column;align-items:center}
+.grid-item .visual{height:100px}
+.grid-item .visual .emoji{font-size:3rem}
+.grid-item:hover:not(.disabled){border-color:var(--primary);transform:translateY(-4px);box-shadow:0 6px 12px rgba(0,0,0,.08)}
+.grid-item.disabled{opacity:.4;cursor:not-allowed;filter:grayscale(1)}
+.grid-name{font-size:1rem;font-weight:800;padding:.5rem;text-align:center}
+
+/* Character detail */
+.detail{display:flex;gap:2rem;align-items:center;overflow-y:auto;flex-wrap:wrap;justify-content:center}
+.detail .visual{width:min(300px,80vw);height:min(300px,80vw);border-radius:24px;border:4px solid var(--primary)}
+.detail .visual .emoji{font-size:8rem}
+.stats{flex:1;min-width:260px}
+.stat-row{display:flex;align-items:center;gap:10px;margin:.5rem 0;font-weight:800;font-size:1.2rem}
+.stat-row .lbl{width:120px;text-transform:capitalize}
+.bar{flex:1;height:18px;background:#eee;border-radius:10px;overflow:hidden}
+.bar>div{height:100%;background:var(--primary);border-radius:10px}
+.stat-row .val{width:40px;text-align:right}
+
+.penalty-box{background:#fff;border-radius:24px;padding:2rem 3rem;width:92%;max-width:800px;text-align:center;
+  box-shadow:0 10px 25px rgba(0,0,0,.1);border:4px solid var(--card-border)}
+.sentence{font-size:clamp(1.5rem,3vw,2.2rem);font-weight:700;margin:1.5rem 0;line-height:1.6}
+.answer-blank{border-bottom:4px dashed var(--text-muted);display:inline-block;min-width:180px;padding:0 10px;color:var(--primary);font-weight:800}
+.points-badge{background:#fff3c4;color:#b78a00;font-weight:800;font-size:1.2rem;padding:.5rem 1rem;border-radius:12px;display:inline-block;margin-bottom:1rem}
+</style>
+</head>
+<body>
+
+<button id="sound-toggle" class="btn-sound" onclick="toggleSound()">🔇 Sound Off</button>
+
+<button id="menu-btn" class="btn-sound hidden" style="left:auto;right:16px" onclick="backToMenu()">🏠 Menu</button>
+
+<div id="top-bar" class="hidden">
+  <div class="score-group"><button class="adj adj-minus" onclick="adjustScore(1,-0.5)">−½ Czech</button><div id="score1-display" class="score-box score-t1">Team 1: 0</div><button class="adj adj-plus" onclick="adjustScore(1,0.5)">+½</button></div>
+  <div id="round-display" class="round-box">Round 1 / 7</div>
+  <div class="score-group"><button class="adj adj-minus" onclick="adjustScore(2,-0.5)">−½ Czech</button><div id="score2-display" class="score-box score-t2">Team 2: 0</div><button class="adj adj-plus" onclick="adjustScore(2,0.5)">+½</button></div>
+</div>
+
+<!-- Intro -->
+<div id="start-screen" class="screen" style="padding-top:2rem">
+  <h1 class="title" style="font-size:clamp(2.5rem,6vw,4rem);color:var(--primary)">Grammar Battle</h1>
+  <p class="subtitle">Comparatives &amp; Superlatives</p>
+  <p class="subtitle" style="font-size:1.2rem;margin-bottom:.5rem">Name your teams!</p>
+  <div style="display:flex;gap:20px;justify-content:center;flex-wrap:wrap">
+    <input type="text" id="team1-input" value="Team 1" maxlength="20" style="color:var(--team1)">
+    <input type="text" id="team2-input" value="Team 2" maxlength="20" style="color:var(--team2)">
+  </div>
+  <button class="btn-light" style="margin:.5rem 0 2rem;font-size:1rem;padding:.7rem 1.4rem" onclick="randomTeamNames()">🎲 Random names</button>
+  <div style="display:flex;gap:20px;flex-wrap:wrap;justify-content:center">
+    <button class="btn-large btn-success" onclick="startGame()">START GAME</button>
+    <button class="btn-large btn-light" onclick="openCharactersModal()">👥 Characters</button>
+  </div>
+</div>
+
+<!-- Hub -->
+<div id="hub-screen" class="screen hidden">
+  <h2 class="title" id="hub-title">Ready for Round 1?</h2>
+  <button class="btn-large" onclick="setupRound()">BATTLE</button>
+</div>
+
+<!-- Stat reveal -->
+<div id="reveal-screen" class="screen hidden" style="background:var(--primary)">
+  <h1 id="reveal-text" class="title" style="color:#fff;line-height:1.2"></h1>
+</div>
+
+<!-- Fight -->
+<div id="fight-screen" class="screen hidden" style="justify-content:center">
+  <h2 id="fight-stat-title" class="title" style="margin-bottom:.2rem;text-transform:uppercase">STAT BATTLE</h2>
+  <p id="fight-subtitle" class="subtitle" style="margin-bottom:.5rem;font-size:1.2rem">Select your heroes!</p>
+  <div class="cards-wrapper">
+    <div id="card1" class="character-card card-team1" onclick="openCharacterModal(1)"></div>
+    <div id="card2" class="character-card card-team2" onclick="openCharacterModal(2)"></div>
+  </div>
+  <div class="fight-actions">
+    <button id="btn-fight" class="btn-large btn-danger hidden" onclick="executeFight()">FIGHT!</button>
+    <button id="btn-next" class="btn-large hidden" onclick="goToPenalty()">NEXT ➔</button>
+  </div>
+</div>
+
+<!-- Hero selection modal -->
+<div id="modal-overlay" class="modal-overlay hidden">
+  <div class="modal-content">
+    <div class="modal-head">
+      <h2 id="modal-title" style="font-size:2rem">Select Hero</h2>
+      <button onclick="closeModal()" class="btn-light">Close ✖</button>
+    </div>
+    <div id="char-grid" class="char-grid"></div>
+  </div>
+</div>
+
+<!-- Characters gallery modal (intro screen) -->
+<div id="chars-overlay" class="modal-overlay hidden" onclick="if(event.target===this)closeCharactersModal()">
+  <div class="modal-content">
+    <div class="modal-head">
+      <button id="chars-back" class="btn-light hidden" onclick="showCharsGrid()">⬅ Back</button>
+      <h2 id="chars-title" style="font-size:2rem;flex:1">Characters</h2>
+      <button onclick="closeCharactersModal()" class="btn-light">Close ✖</button>
+    </div>
+    <div id="chars-grid" class="char-grid"></div>
+    <div id="chars-detail" class="detail hidden"></div>
+  </div>
+</div>
+
+<!-- Penalty -->
+<div id="penalty-screen" class="screen hidden">
+  <div class="penalty-box">
+    <div class="points-badge">+0.5 Points</div>
+    <h2 style="font-size:2.2rem;margin-bottom:.8rem">Grammar Recovery</h2>
+    <p id="penalty-instructions" style="color:var(--text-muted);font-size:1.2rem;font-weight:700"></p>
+    <div id="penalty-sentence" class="sentence">...</div>
+    <div id="penalty-controls" style="margin-top:1.5rem">
+      <button onclick="revealAnswer()">Show Answer</button>
+    </div>
+    <div id="penalty-judge" class="hidden" style="display:flex;gap:20px;justify-content:center;margin-top:1.5rem">
+      <button class="btn-success" onclick="resolvePenalty(true)">Correct ✅</button>
+      <button class="btn-danger" onclick="resolvePenalty(false)">Wrong ❌</button>
+    </div>
+  </div>
+</div>
+
+<!-- End -->
+<div id="end-screen" class="screen hidden">
+  <h1 class="title" style="font-size:4rem">Game Over!</h1>
+  <h2 id="winner-text" style="font-size:clamp(2rem,6vw,4rem);color:var(--secondary);margin-bottom:1.5rem;text-align:center">WINNER</h2>
+  <div style="background:#fff;padding:1.5rem 4rem;border-radius:24px;border:2px solid var(--card-border);margin-bottom:2rem">
+    <h3 id="final-score-text" style="font-size:3rem">0 - 0</h3>
+  </div>
+  <button class="btn-large" onclick="location.reload()">PLAY AGAIN</button>
+</div>
+
+<script>
+// ================= DATA =================
+// IMAGES: put your pictures into a folder called "images" next to this HTML file
+// and name them as in the 3rd column of each hero (e.g. "images/sonic.png"). Formats: png/jpg/webp.
+// If a picture is missing, the emoji is shown instead - nothing breaks.
+// Stat order: speed, strength, intelligence, creativity, luck, bravery, coolness
+const STATS = ['speed','strength','intelligence','creativity','luck','bravery','coolness'];
+
+// Adjective + superlative for each stat (used in the intro text)
+const STAT_INFO = {
+  speed:        { sup: 'the fastest' },
+  strength:     { sup: 'the strongest' },
+  intelligence: { sup: 'the most intelligent' },
+  creativity:   { sup: 'the most creative' },
+  luck:         { sup: 'the luckiest' },
+  bravery:      { sup: 'the bravest' },
+  coolness:     { sup: 'the coolest' }
+};
+
+// mk(name, emoji, imagePath, [stats]) - change the imagePath of any hero below, or use "" for emoji only
+function mk(name, emoji, image, v) {
+  const o = { name, emoji, image };
+  STATS.forEach((s, i) => o[s] = v[i]);
+  return o;
+}
+const characters = [
+  mk("Sonic","💨","images/sonic.png",[99,60,56,48,80,80,97]),
+  mk("Superman","🦸","images/superman.png",[97,99,80,40,70,99,87]),
+  mk("L. McQueen","🏎️","images/mcqueen.png",[93,82,50,44,74,74,89]),
+  mk("Pikachu","⚡","images/pikachu.png",[82,58,66,56,84,82,78]),
+  mk("Spider-Man","🕷️","images/spiderman.png",[78,85,88,84,40,92,93]),
+  mk("Scrat","🐿️","images/scrat.png",[74,30,38,66,5,30,50]),
+  mk("Mario","🍄","images/mario.png",[72,68,62,64,88,90,68]),
+  mk("T-Rex","🦖","images/trex.png",[70,95,20,10,28,78,60]),
+  mk("Batman","🦇","images/batman.png",[66,78,96,88,46,95,99]),
+  mk("Steve","🧱","images/steve.png",[64,74,84,99,62,86,80]),
+  mk("Impostor","🔴","images/impostor.png",[62,54,70,52,34,54,74]),
+  mk("Minion","🟡","images/minion.png",[58,38,42,80,76,50,72]),
+  mk("Jack Sparrow","🏴‍☠️","images/sparrow.png",[55,50,82,76,99,88,95]),
+  mk("Elsa","❄️","images/elsa.png",[52,70,76,78,58,70,91]),
+  mk("Barbie","💗","images/barbie.png",[50,34,72,90,72,62,96]),
+  mk("Gru","🧑‍🔬","images/gru.png",[48,46,90,86,52,58,64]),
+  mk("SpongeBob","🧽","images/spongebob.png",[46,40,46,95,92,66,56]),
+  mk("Mr. Bean","🕴️","images/bean.png",[44,26,58,92,15,40,30]),
+  mk("Shrek","🟩","images/shrek.png",[40,90,54,60,66,76,76]),
+  mk("Dumbledore","🧙‍♂️","images/dumbledore.png",[36,66,99,74,68,84,70])
+];
+
+// Penalty sentences (42). Add your own: { text: "... {blank} ... (adjective)", answer: "..." }
+const grammarTasks = [
+  { text: "Russia is {blank} than the UK. (large)", answer: "larger" },
+  { text: "The blue whale is {blank} animal in the world. (heavy)", answer: "the heaviest" },
+  { text: "A cheetah is {blank} than a lion. (fast)", answer: "faster" },
+  { text: "Mount Everest is {blank} mountain in the world. (high)", answer: "the highest" },
+  { text: "I think Maths is {blank} than History. (difficult)", answer: "more difficult" },
+  { text: "Who is {blank} student in your class? (good)", answer: "the best" },
+  { text: "This is {blank} film I have ever seen. (bad)", answer: "the worst" },
+  { text: "A shark is {blank} than a dolphin. (dangerous)", answer: "more dangerous" },
+  { text: "Prague is {blank} than Brno. (big)", answer: "bigger" },
+  { text: "Summer is {blank} season of the year. (hot)", answer: "the hottest" },
+  { text: "My bag is {blank} than your bag. (heavy)", answer: "heavier" },
+  { text: "This exercise is {blank} than the last one. (easy)", answer: "easier" },
+  { text: "Chinese is {blank} language to learn. (difficult)", answer: "the most difficult" },
+  { text: "A mouse is {blank} than an elephant. (small)", answer: "smaller" },
+  { text: "Gold is {blank} than silver. (expensive)", answer: "more expensive" },
+  { text: "January is {blank} month of the year. (cold)", answer: "the coldest" },
+  { text: "A car is {blank} than a bicycle. (fast)", answer: "faster" },
+  { text: "This is {blank} pizza in town. (good)", answer: "the best" },
+  { text: "Today's weather is {blank} than yesterday's. (bad)", answer: "worse" },
+  { text: "The Nile is {blank} river in Africa. (long)", answer: "the longest" },
+  { text: "Football is {blank} sport in the world. (popular)", answer: "the most popular" },
+  { text: "My brother is {blank} than me. (tall)", answer: "taller" },
+  { text: "A laptop is {blank} than a phone. (big)", answer: "bigger" },
+  { text: "Who is {blank} person in your family? (funny)", answer: "the funniest" },
+  { text: "Maths lessons are {blank} than PE lessons. (boring)", answer: "more boring" },
+  { text: "The Pacific is {blank} ocean on Earth. (large)", answer: "the largest" },
+  { text: "A tortoise is {blank} than a rabbit. (slow)", answer: "slower" },
+  { text: "This is {blank} day of my life! (happy)", answer: "the happiest" },
+  { text: "Skiing is {blank} than walking. (exciting)", answer: "more exciting" },
+  { text: "Vatican City is {blank} country in the world. (small)", answer: "the smallest" },
+  { text: "My new phone is {blank} than my old one. (modern)", answer: "more modern" },
+  { text: "Of all my friends, Tom is {blank}. (old)", answer: "the oldest" },
+  { text: "Sunday is {blank} day of the week for me. (relaxing)", answer: "the most relaxing" },
+  { text: "A feather is {blank} than a stone. (light)", answer: "lighter" },
+  { text: "Winter days are {blank} than summer days. (short)", answer: "shorter" },
+  { text: "This is {blank} book I have ever read. (interesting)", answer: "the most interesting" },
+  { text: "The test was {blank} than I expected. (hard)", answer: "harder" },
+  { text: "Ice cream is {blank} than broccoli. (tasty)", answer: "tastier" },
+  { text: "Honey is {blank} than lemon. (sweet)", answer: "sweeter" },
+  { text: "Jupiter is {blank} planet in our solar system. (big)", answer: "the biggest" },
+  { text: "My grandma is {blank} person I know. (kind)", answer: "the kindest" },
+  { text: "I feel {blank} today than yesterday. (tired)", answer: "more tired" }
+];
+
+// ================= HELPERS =================
+// Emoji underneath, image on top; if the image loads the emoji is hidden
+function visual(char, extraClass) {
+  if (!char) return `<div class="visual ${extraClass||''}"><span class="emoji">➕</span></div>`;
+  const img = char.image
+    ? `<img src="${char.image}" alt="${char.name}" onload="this.parentNode.classList.add('has-img')" onerror="this.remove()">` : '';
+  return `<div class="visual ${extraClass||''}"><span class="emoji">${char.emoji}</span>${img}</div>`;
+}
+
+// ================= SOUND =================
+let audioCtx = null, soundEnabled = false;
+function toggleSound() {
+  soundEnabled = !soundEnabled;
+  const btn = document.getElementById('sound-toggle');
+  if (soundEnabled) {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    btn.innerText = "🔊 Sound On"; btn.classList.add('active'); playSound('click');
+  } else { btn.innerText = "🔇 Sound Off"; btn.classList.remove('active'); }
+}
+function playSound(type) {
+  if (!soundEnabled || !audioCtx) return;
+  const osc = audioCtx.createOscillator(), g = audioCtx.createGain();
+  osc.connect(g); g.connect(audioCtx.destination);
+  const t = audioCtx.currentTime;
+  if (type === 'click') {
+    osc.type='sine'; osc.frequency.setValueAtTime(600,t); osc.frequency.exponentialRampToValueAtTime(800,t+.1);
+    g.gain.setValueAtTime(.3,t); g.gain.exponentialRampToValueAtTime(.01,t+.1); osc.start(t); osc.stop(t+.1);
+  } else if (type === 'crash') {
+    osc.type='square'; osc.frequency.setValueAtTime(150,t); osc.frequency.exponentialRampToValueAtTime(40,t+.3);
+    g.gain.setValueAtTime(.3,t); g.gain.exponentialRampToValueAtTime(.01,t+.3); osc.start(t); osc.stop(t+.3);
+  } else if (type === 'win') {
+    osc.type='triangle'; osc.frequency.setValueAtTime(440,t); osc.frequency.setValueAtTime(554.37,t+.1); osc.frequency.setValueAtTime(659.25,t+.2);
+    g.gain.setValueAtTime(.3,t); g.gain.linearRampToValueAtTime(0,t+.5); osc.start(t); osc.stop(t+.5);
+  } else if (type === 'lose') {
+    osc.type='sawtooth'; osc.frequency.setValueAtTime(300,t); osc.frequency.linearRampToValueAtTime(200,t+.4);
+    g.gain.setValueAtTime(.2,t); g.gain.linearRampToValueAtTime(0,t+.4); osc.start(t); osc.stop(t+.4);
+  }
+}
+
+// ================= GAME STATE =================
+let team1Name="Team 1", team2Name="Team 2", team1Score=0, team2Score=0;
+let currentRound=0; const maxRounds=7;
+let availableStats=[...STATS], currentStat="";
+let team1SelectedChar=null, team2SelectedChar=null;
+let team1UsedChars=new Set(), team2UsedChars=new Set();
+let selectingForTeam=1, currentGrammarAnswer="", penaltyTeamNum=0;
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}}
+function formatScore(s){return s%1===0?s.toString():s.toFixed(1);}
+function updateTopBar(){
+  document.getElementById('score1-display').innerText=`${team1Name}: ${formatScore(team1Score)}`;
+  document.getElementById('score2-display').innerText=`${team2Name}: ${formatScore(team2Score)}`;
+  document.getElementById('round-display').innerText=`Round ${Math.min(currentRound,maxRounds)} / ${maxRounds}`;
+}
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+}
+
+function startGame(){
+  playSound('click');
+  team1Name=document.getElementById('team1-input').value.trim()||"Team 1";
+  team2Name=document.getElementById('team2-input').value.trim()||"Team 2";
+  team1Score=0; team2Score=0; currentRound=0;
+  team1UsedChars.clear(); team2UsedChars.clear();
+  availableStats=[...STATS]; shuffle(availableStats); shuffle(grammarTasks);
+  document.getElementById('top-bar').classList.remove('hidden');
+  document.getElementById('menu-btn').classList.remove('hidden');
+  updateTopBar();
+  document.getElementById('hub-title').innerText="Ready for Round 1?";
+  showScreen('hub-screen');
+}
+
+function setupRound(){
+  playSound('click');
+  currentRound++; updateTopBar();
+  currentStat=availableStats.pop();
+  document.getElementById('reveal-text').innerHTML=
+    `<span style="font-size:clamp(1.5rem,3.5vw,2.5rem)">The battle of</span><br>`+
+    `<span style="font-size:clamp(3rem,10vw,8rem);text-transform:uppercase">${currentStat}</span><br>`+
+    `<span style="font-size:clamp(1.3rem,3.5vw,2.8rem);font-weight:700">Who do you think is ${STAT_INFO[currentStat].sup}?</span>`;
+  showScreen('reveal-screen');
+  setTimeout(()=>{resetFightScreen();showScreen('fight-screen');},4000);
+}
+
+function emptyCard(num){
+  const c=document.getElementById(`card${num}`);
+  c.className=`character-card card-team${num}`;
+  c.innerHTML=`${visual(null)}<div class="card-name" style="color:var(--text-muted)">Select Hero</div><div id="stat${num}" class="card-stat-value">0</div>`;
+  c.onclick=()=>openCharacterModal(num);
+}
+function resetFightScreen(){
+  team1SelectedChar=null; team2SelectedChar=null;
+  document.getElementById('fight-stat-title').innerText=`The battle of ${currentStat}`;
+  document.getElementById('fight-subtitle').innerText=`Who is ${STAT_INFO[currentStat].sup}? Select your heroes!`;
+  emptyCard(1); emptyCard(2);
+  document.getElementById('btn-fight').classList.add('hidden');
+  document.getElementById('btn-next').classList.add('hidden');
+}
+
+// ---- hero selection ----
+function openCharacterModal(team){
+  playSound('click'); selectingForTeam=team;
+  const t=document.getElementById('modal-title');
+  t.innerText=`${team===1?team1Name:team2Name} - Select Hero`;
+  t.style.color=team===1?'var(--team1)':'var(--team2)';
+  const grid=document.getElementById('char-grid'); grid.innerHTML='';
+  const used=team===1?team1UsedChars:team2UsedChars;
+  characters.forEach((ch,i)=>{
+    const d=document.createElement('div');
+    d.className=`grid-item ${used.has(i)?'disabled':''}`;
+    if(!used.has(i)) d.onclick=()=>selectCharacter(i);
+    d.innerHTML=`${visual(ch)}<div class="grid-name">${ch.name}</div>`;
+    grid.appendChild(d);
+  });
+  document.getElementById('modal-overlay').classList.remove('hidden');
+}
+function closeModal(){playSound('click');document.getElementById('modal-overlay').classList.add('hidden');}
+
+function selectCharacter(i){
+  playSound('click');
+  const ch=characters[i], n=selectingForTeam, card=document.getElementById(`card${n}`);
+  card.innerHTML=`${visual(ch)}<div class="card-name">${ch.name}</div><div id="stat${n}" class="card-stat-value">0</div>`;
+  card.classList.add('filled');
+  if(n===1){team1SelectedChar=ch;team1UsedChars.add(i);} else {team2SelectedChar=ch;team2UsedChars.add(i);}
+  document.getElementById('modal-overlay').classList.add('hidden');
+  if(team1SelectedChar&&team2SelectedChar) document.getElementById('btn-fight').classList.remove('hidden');
+}
+
+// ---- fight ----
+function executeFight(){
+  playSound('crash');
+  document.getElementById('btn-fight').classList.add('hidden');
+  const c1=document.getElementById('card1'), c2=document.getElementById('card2');
+  c1.onclick=null; c2.onclick=null;
+  c1.classList.add('anim-bump-left'); c2.classList.add('anim-bump-right');
+  setTimeout(revealWinner,400);
+}
+function revealWinner(){
+  const v1=team1SelectedChar[currentStat], v2=team2SelectedChar[currentStat];
+  const s1=document.getElementById('stat1'), s2=document.getElementById('stat2');
+  s1.innerText=v1; s1.style.display='block'; s2.innerText=v2; s2.style.display='block';
+  const c1=document.getElementById('card1'), c2=document.getElementById('card2');
+  let tie=false;
+  if(v1>v2){playSound('win');team1Score+=1;c1.classList.add('winner-card');c2.classList.add('loser-card');penaltyTeamNum=2;}
+  else if(v2>v1){playSound('win');team2Score+=1;c2.classList.add('winner-card');c1.classList.add('loser-card');penaltyTeamNum=1;}
+  else{playSound('lose');tie=true;document.getElementById('fight-stat-title').innerText="DRAW!";}
+  updateTopBar();
+  setTimeout(()=>{
+    const b=document.getElementById('btn-next');
+    if(tie){b.innerText="NEXT ROUND ➔";penaltyTeamNum=0;} else b.innerText="NEXT: PENALTY TASK ➔";
+    b.classList.remove('hidden');
+  },1000);
+}
+
+// ---- penalty ----
+function goToPenalty(){
+  playSound('click');
+  if(penaltyTeamNum===0){goToHubOrEnd();return;}
+  const task=grammarTasks[currentRound%grammarTasks.length];
+  currentGrammarAnswer=task.answer;
+  const name=penaltyTeamNum===1?team1Name:team2Name;
+  document.getElementById('penalty-instructions').innerHTML=
+    `<strong style="color:var(--text-main);font-size:1.5rem">${name} lost!</strong><br>Solve this sentence to gain 0.5 recovery points.`;
+  document.getElementById('penalty-sentence').innerHTML=task.text.replace('{blank}','<span class="answer-blank" id="blank-space"></span>');
+  document.getElementById('penalty-controls').classList.remove('hidden');
+  document.getElementById('penalty-judge').classList.add('hidden');
+  showScreen('penalty-screen');
+}
+function revealAnswer(){
+  playSound('click');
+  const b=document.getElementById('blank-space');
+  b.innerText=currentGrammarAnswer; b.style.borderBottomStyle='solid';
+  document.getElementById('penalty-controls').classList.add('hidden');
+  document.getElementById('penalty-judge').classList.remove('hidden');
+}
+function resolvePenalty(ok){
+  if(ok){playSound('win');if(penaltyTeamNum===1)team1Score+=.5;else team2Score+=.5;updateTopBar();}
+  else playSound('lose');
+  setTimeout(goToHubOrEnd,500);
+}
+function goToHubOrEnd(){
+  if(currentRound>=maxRounds) endGame();
+  else{document.getElementById('hub-title').innerText=`Ready for Round ${currentRound+1}?`;showScreen('hub-screen');}
+}
+function endGame(){
+  document.getElementById('top-bar').classList.add('hidden');
+  document.getElementById('menu-btn').classList.add('hidden');
+  showScreen('end-screen');
+  let t;
+  if(team1Score>team2Score) t=`${team1Name} WINS! 🏆`;
+  else if(team2Score>team1Score) t=`${team2Name} WINS! 🏆`;
+  else t="IT'S A TIE! 🤝";
+  document.getElementById('winner-text').innerText=t;
+  document.getElementById('final-score-text').innerText=`${formatScore(team1Score)} - ${formatScore(team2Score)}`;
+  playSound('win');
+}
+
+// ================= MANUAL SCORE ADJUSTMENT =================
+// Teacher buttons in the top bar: -0.5 when someone speaks Czech, +0.5 for a bonus
+function adjustScore(team,delta){
+  playSound(delta<0?'lose':'win');
+  if(team===1) team1Score+=delta; else team2Score+=delta;
+  updateTopBar();
+}
+
+// ================= MENU + TEAM NAMES =================
+function backToMenu(){
+  if(!confirm('Go back to the main menu? The current game will be lost.')) return;
+  playSound('click');
+  ['modal-overlay','chars-overlay'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  document.getElementById('top-bar').classList.add('hidden');
+  document.getElementById('menu-btn').classList.add('hidden');
+  showScreen('start-screen');
+}
+const TEAM_NAMES=["Thunder Dragons","Pixel Ninjas","Turbo Tigers","Epic Wizards","Neon Wolves","Super Sloths",
+  "Cosmic Pandas","Fire Foxes","Laser Llamas","Galaxy Gamers","Mighty Memes","Ninja Nuggets","Jumping Jellyfish","Crazy Capybaras"];
+function randomTeamNames(){
+  playSound('click');
+  const a=[...TEAM_NAMES]; shuffle(a);
+  document.getElementById('team1-input').value=a[0];
+  document.getElementById('team2-input').value=a[1];
+}
+
+// ================= CHARACTERS GALLERY (intro screen) =================
+function openCharactersModal(){
+  playSound('click');
+  showCharsGrid();
+  document.getElementById('chars-overlay').classList.remove('hidden');
+}
+function closeCharactersModal(){playSound('click');document.getElementById('chars-overlay').classList.add('hidden');}
+function showCharsGrid(){
+  const grid=document.getElementById('chars-grid'); grid.innerHTML='';
+  characters.forEach((ch,i)=>{
+    const d=document.createElement('div'); d.className='grid-item';
+    d.onclick=()=>showCharDetail(i);
+    d.innerHTML=`${visual(ch)}<div class="grid-name">${ch.name}</div>`;
+    grid.appendChild(d);
+  });
+  grid.classList.remove('hidden');
+  document.getElementById('chars-detail').classList.add('hidden');
+  document.getElementById('chars-back').classList.add('hidden');
+  document.getElementById('chars-title').innerText='Characters';
+}
+function showCharDetail(i){
+  playSound('click');
+  const ch=characters[i];
+  const rows=STATS.map(s=>`<div class="stat-row"><span class="lbl">${s}</span>
+    <div class="bar"><div style="width:${ch[s]}%"></div></div><span class="val">${ch[s]}</span></div>`).join('');
+  document.getElementById('chars-detail').innerHTML=`${visual(ch)}<div class="stats">${rows}</div>`;
+  document.getElementById('chars-grid').classList.add('hidden');
+  document.getElementById('chars-detail').classList.remove('hidden');
+  document.getElementById('chars-back').classList.remove('hidden');
+  document.getElementById('chars-title').innerText=ch.name;
+}
+</script>
+</body>
+</html>
