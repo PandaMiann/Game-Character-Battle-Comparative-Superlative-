@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Game Character Battle</title>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
-<link rel="icon" type="image/svg+xml" sizes="any"        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚔️</text></svg>"/>
 <style>
 :root{
+  --topbar-h:0px;
   --bg-color:#f7f9fa;--text-main:#3c3c3c;--text-muted:#afafaf;
   --primary:#1cb0f6;--primary-shadow:#1899d6;
   --secondary:#58a700;--secondary-shadow:#468700;
@@ -16,7 +16,7 @@
   --card-border:#e5e5e5;
 }
 *{box-sizing:border-box;margin:0;padding:0;font-family:'Nunito',sans-serif;user-select:none}
-body{background:var(--bg-color);color:var(--text-main);height:100vh;width:100vw;overflow:hidden;position:relative}
+body{background:var(--bg-color);color:var(--text-main);height:100vh;height:100dvh;width:100vw;overflow:hidden;position:relative}
 .hidden{display:none !important}
 h1,h2,h3{font-weight:800}
 .title{font-size:clamp(2rem,5vw,3rem);text-align:center;margin-bottom:1rem}
@@ -25,7 +25,7 @@ h1,h2,h3{font-weight:800}
 button{border:none;border-radius:16px;font-size:1.25rem;font-weight:800;cursor:pointer;transition:all .1s;
   text-transform:uppercase;letter-spacing:1px;padding:1rem 2rem;color:#fff;background:var(--primary);box-shadow:0 6px 0 var(--primary-shadow)}
 button:active:not(:disabled){transform:translateY(6px);box-shadow:none}
-.btn-large{font-size:clamp(1.3rem,3vw,2rem);padding:1.1rem 3rem;border-radius:24px;box-shadow:0 8px 0 var(--primary-shadow)}
+.btn-large{font-size:clamp(1.2rem,3vw,2rem);padding:clamp(.7rem,2vh,1.1rem) clamp(1.4rem,5vw,3rem);border-radius:24px;box-shadow:0 8px 0 var(--primary-shadow)}
 .btn-large:active:not(:disabled){transform:translateY(8px);box-shadow:none}
 .btn-success{background:var(--secondary);box-shadow:0 6px 0 var(--secondary-shadow)}
 .btn-success.btn-large{box-shadow:0 8px 0 var(--secondary-shadow)}
@@ -42,8 +42,12 @@ input{background:#fff;border:2px solid var(--card-border);padding:1rem;font-size
   margin:.5rem;width:100%;max-width:300px;font-weight:700}
 input:focus{outline:none;border-color:var(--primary)}
 
-.screen{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;
-  position:absolute;top:0;left:0;padding:5.5rem 1.5rem 1.5rem;background:var(--bg-color);overflow-y:auto}
+.screen{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;width:100%;height:100%;
+  position:absolute;top:0;left:0;background:var(--bg-color);overflow-y:auto;
+  /* top = real top bar height (set by JS), bottom = room for the fixed Sound/Menu buttons */
+  padding:calc(var(--topbar-h) + 1rem) clamp(.7rem,3vw,1.5rem) 4.5rem}
+/* centers content when there is space, lets it scroll normally when there isn't */
+.screen::before,.screen::after{content:"";margin:auto}
 
 #top-bar{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;
   padding:.8rem 2rem;background:#fff;z-index:50;border-bottom:2px solid var(--card-border)}
@@ -77,8 +81,8 @@ input:focus{outline:none;border-color:var(--primary)}
 
 /* Fight cards scale with screen height so FIGHT button always fits */
 .cards-wrapper{display:flex;justify-content:center;gap:clamp(1rem,4vw,4rem);width:100%;margin:.5rem 0 1rem}
-.character-card{background:#fff;border:4px dashed var(--card-border);border-radius:24px;width:min(320px,30vw);
-  height:min(440px,46vh);display:flex;flex-direction:column;align-items:center;cursor:pointer;
+.character-card{background:#fff;border:4px dashed var(--card-border);border-radius:24px;width:clamp(135px,42vw,320px);
+  height:clamp(150px,44vh,440px);display:flex;flex-direction:column;align-items:center;cursor:pointer;
   transition:all .2s;overflow:hidden;padding-bottom:.6rem}
 .character-card .visual{flex:1;min-height:0}
 .character-card:hover{transform:scale(1.02);border-color:var(--primary)}
@@ -87,7 +91,7 @@ input:focus{outline:none;border-color:var(--primary)}
 .card-team2{border-color:var(--team2)}
 .card-name{font-size:clamp(1.2rem,3vh,2rem);font-weight:800;margin-top:.5rem;text-align:center}
 .card-stat-value{font-size:clamp(1.8rem,5vh,3.5rem);font-weight:900;display:none;color:#fff;background:var(--primary);
-  padding:0 2rem;border-radius:16px;margin-top:.3rem}
+  padding:0 clamp(.8rem,3vw,2rem);border-radius:16px;margin-top:.3rem}
 .fight-actions{min-height:90px;display:flex;align-items:center;justify-content:center;gap:20px;padding-bottom:12px}
 
 @keyframes bumpLeft{0%{transform:translateX(0)}50%{transform:translateX(40px) rotate(5deg)}100%{transform:translateX(0)}}
@@ -99,7 +103,7 @@ input:focus{outline:none;border-color:var(--primary)}
 
 /* Modals */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:flex;align-items:center;justify-content:center}
-.modal-content{background:#fff;border-radius:24px;padding:1.5rem;width:92%;max-width:1000px;max-height:90vh;display:flex;
+.modal-content{background:#fff;border-radius:24px;padding:1.5rem;width:92%;max-width:1000px;max-height:90vh;max-height:90dvh;display:flex;
   flex-direction:column;box-shadow:0 10px 25px rgba(0,0,0,.15);animation:slideUp .3s ease-out}
 @keyframes slideUp{from{transform:translateY(60px);opacity:0}to{transform:none;opacity:1}}
 .modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;gap:10px}
@@ -123,11 +127,42 @@ input:focus{outline:none;border-color:var(--primary)}
 .bar>div{height:100%;background:var(--primary);border-radius:10px}
 .stat-row .val{width:40px;text-align:right}
 
-.penalty-box{background:#fff;border-radius:24px;padding:2rem 3rem;width:92%;max-width:800px;text-align:center;
+.penalty-box{background:#fff;border-radius:24px;padding:clamp(1rem,4vw,2rem) clamp(1rem,4vw,3rem);width:92%;max-width:800px;text-align:center;
   box-shadow:0 10px 25px rgba(0,0,0,.1);border:4px solid var(--card-border)}
 .sentence{font-size:clamp(1.5rem,3vw,2.2rem);font-weight:700;margin:1.5rem 0;line-height:1.6}
 .answer-blank{border-bottom:4px dashed var(--text-muted);display:inline-block;min-width:180px;padding:0 10px;color:var(--primary);font-weight:800}
 .points-badge{background:#fff3c4;color:#b78a00;font-weight:800;font-size:1.2rem;padding:.5rem 1rem;border-radius:12px;display:inline-block;margin-bottom:1rem}
+
+/* ---- Responsive: phones & narrow windows ---- */
+@media (max-width:820px){
+  #top-bar{flex-wrap:wrap;padding:.5rem .6rem;gap:4px;justify-content:center}
+  .round-box{order:-1;width:100%;text-align:center;font-size:1rem}
+  .score-group{flex:1;flex-wrap:wrap;justify-content:center;gap:4px}
+  .score-box{order:-1;width:100%;text-align:center;font-size:1.1rem;padding:.2rem .4rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .adj{font-size:.72rem;padding:.35rem .6rem}
+  .subtitle{font-size:1.1rem}
+  .char-grid{grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:.6rem}
+  .grid-item .visual{height:80px}
+  .modal-content{padding:1rem;width:96%}
+  .modal-head h2{font-size:1.4rem !important}
+  .stat-row{font-size:1rem}
+  .stat-row .lbl{width:95px}
+  .rules-list{padding-left:1.6rem}
+  .btn-sound{font-size:.85rem;padding:.5rem .7rem}
+}
+/* ---- Responsive: short screens (phone in landscape, small laptops) ---- */
+@media (max-height:520px){
+  .screen{padding-bottom:3.2rem}
+  .title{font-size:1.6rem;margin-bottom:.3rem}
+  .subtitle{font-size:1rem;margin-bottom:.4rem}
+  #fight-subtitle{display:none}
+  .fight-actions{min-height:64px}
+  .btn-large{font-size:1.2rem}
+  .btn-sound{bottom:8px;padding:.3rem .6rem;font-size:.8rem}
+  .btn-sound:first-of-type{left:8px}
+  #menu-btn{right:8px !important}
+  .detail .visual{width:150px;height:150px}
+}
 </style>
 </head>
 <body>
@@ -143,7 +178,7 @@ input:focus{outline:none;border-color:var(--primary)}
 </div>
 
 <!-- Intro -->
-<div id="start-screen" class="screen" style="padding-top:2rem">
+<div id="start-screen" class="screen">
   <h1 class="title" style="font-size:clamp(2.5rem,6vw,4rem);color:var(--primary)">Grammar Battle</h1>
   <p class="subtitle">Comparatives &amp; Superlatives</p>
   <p class="subtitle" style="font-size:1.2rem;margin-bottom:.5rem">Name your teams!</p>
@@ -171,7 +206,7 @@ input:focus{outline:none;border-color:var(--primary)}
 </div>
 
 <!-- Fight -->
-<div id="fight-screen" class="screen hidden" style="justify-content:center">
+<div id="fight-screen" class="screen hidden">
   <h2 id="fight-stat-title" class="title" style="margin-bottom:.2rem;text-transform:uppercase">STAT BATTLE</h2>
   <p id="fight-subtitle" class="subtitle" style="margin-bottom:.5rem;font-size:1.2rem">Select your heroes!</p>
   <div class="cards-wrapper">
@@ -217,7 +252,7 @@ input:focus{outline:none;border-color:var(--primary)}
     </div>
     <ol class="rules-list">
       <li><b>Two teams</b> play against each other. Every player has a hero card.</li>
-      <li>Every hero has secret <b>stats</b> (numbers from 1 to 99): <b>speed, strength, intelligence, creativity, luck, bravery</b> and <b>coolness</b>. A higher number is better. You can't see the numbers - only the picture!
+      <li>Every hero has secret <b>stats</b> (numbers from 1 to 99): <b>speed, strength, intelligence, creativity, luck, bravery</b> and <b>stealth</b> (= being sneaky and hard to see). A higher number is better. You can't see the numbers - only the picture!
           <div id="rules-example" class="rules-example"></div></li>
       <li>Each round we announce a battle, e.g. <b>"The battle of speed"</b>.</li>
       <li><b>Talk in your team in English!</b> Who is the fastest? Choose your best hero.<br>
@@ -250,9 +285,9 @@ input:focus{outline:none;border-color:var(--primary)}
 
 <!-- End -->
 <div id="end-screen" class="screen hidden">
-  <h1 class="title" style="font-size:4rem">Game Over!</h1>
+  <h1 class="title" style="font-size:clamp(2.5rem,8vw,4rem)">Game Over!</h1>
   <h2 id="winner-text" style="font-size:clamp(2rem,6vw,4rem);color:var(--secondary);margin-bottom:1.5rem;text-align:center">WINNER</h2>
-  <div style="background:#fff;padding:1.5rem 4rem;border-radius:24px;border:2px solid var(--card-border);margin-bottom:2rem">
+  <div style="background:#fff;padding:1.2rem clamp(1.5rem,6vw,4rem);border-radius:24px;border:2px solid var(--card-border);margin-bottom:2rem">
     <h3 id="final-score-text" style="font-size:3rem">0 - 0</h3>
   </div>
   <button class="btn-large" onclick="location.reload()">PLAY AGAIN</button>
@@ -263,8 +298,8 @@ input:focus{outline:none;border-color:var(--primary)}
 // IMAGES: put your pictures into a folder called "images" next to this HTML file
 // and name them as in the 3rd column of each hero (e.g. "images/sonic.png"). Formats: png/jpg/webp.
 // If a picture is missing, the emoji is shown instead - nothing breaks.
-// Stat order: speed, strength, intelligence, creativity, luck, bravery, coolness
-const STATS = ['speed','strength','intelligence','creativity','luck','bravery','coolness'];
+// Stat order: speed, strength, intelligence, creativity, luck, bravery, stealth
+const STATS = ['speed','strength','intelligence','creativity','luck','bravery','stealth'];
 
 // Adjective + superlative for each stat (used in the intro text)
 const STAT_INFO = {
@@ -274,7 +309,7 @@ const STAT_INFO = {
   creativity:   { sup: 'the most creative' },
   luck:         { sup: 'the luckiest' },
   bravery:      { sup: 'the bravest' },
-  coolness:     { sup: 'the coolest' }
+  stealth:      { sup: 'the stealthiest' }
 };
 
 // mk(name, emoji, imagePath, [stats]) - change the imagePath of any hero below, or use "" for emoji only
@@ -284,26 +319,25 @@ function mk(name, emoji, image, v) {
   return o;
 }
 const characters = [
-  mk("Sonic","💨","images/sonic.png",[99,60,56,48,80,80,97]),
-  mk("Superman","🦸","images/superman.png",[97,99,80,40,70,99,87]),
-  mk("L. McQueen","🏎️","images/mcqueen.png",[93,82,50,44,74,74,89]),
-  mk("Pikachu","⚡","images/pikachu.png",[82,58,66,56,84,82,78]),
-  mk("Spider-Man","🕷️","images/spiderman.png",[78,95,88,84,40,92,93]),
-  mk("Scrat","🐿️","images/scrat.png",[74,30,38,66,5,30,50]),
-  mk("Mario","🍄","images/mario.png",[72,68,62,64,88,90,68]),
-  mk("T-Rex","🦖","images/trex.png",[70,85,20,10,28,78,60]),
-  mk("Batman","🦇","images/batman.png",[66,78,96,88,46,95,99]),
-  mk("Steve","🧱","images/steve.png",[64,74,84,99,62,86,80]),
-  mk("Impostor","🔴","images/impostor.png",[62,54,70,52,34,54,74]),
-  mk("Minion","🟡","images/minion.png",[58,38,42,80,76,50,72]),
-  mk("Jack Sparrow","🏴‍☠️","images/sparrow.png",[55,50,82,76,99,88,95]),
-  mk("Elsa","❄️","images/elsa.png",[52,70,76,78,58,70,91]),
-  mk("Barbie","💗","images/barbie.png",[50,34,72,90,72,62,96]),
-  mk("Gru","🧑‍🔬","images/gru.png",[48,46,90,86,52,58,64]),
-  mk("SpongeBob","🧽","images/spongebob.png",[46,40,46,95,92,66,56]),
-  mk("Mr. Bean","🕴️","images/bean.png",[44,26,58,92,15,40,30]),
-  mk("Shrek","🟩","images/shrek.png",[40,90,54,60,66,76,76]),
-  mk("Dumbledore","🧙‍♂️","images/dumbledore.png",[36,66,99,74,68,84,70])
+  mk("Sonic","🦔","images/sonic.png",[100,65,56,48,80,80,45]),
+  mk("Superman","🦸","images/superman.png",[97,100,80,40,75,99,25]),
+  mk("L. McQueen","🏎️","images/mcqueen.png",[93,45,50,44,74,74,10]),
+  mk("Pikachu","⚡","images/pikachu.png",[82,45,66,56,84,82,60]),
+  mk("Spider-Man","🕷️","images/spiderman.png",[78,90,94,84,70,92,90]),
+  mk("Scrat","🐿️","images/scrat.png",[74,35,38,66,100,30,75]),
+  mk("Mario","🍄","images/mario.png",[72,82,62,64,88,90,40]),
+  mk("T-Rex","🦖","images/trex.png",[70,95,20,10,40,78,5]),
+  mk("Batman","🦇","images/batman.png",[66,80,96,88,65,95,100]),
+  mk("Jack Sparrow","🏴‍☠️","images/sparrow.png",[64,40,88,99,98,86,65]),
+  mk("Impostor","👾","images/impostor.png",[62,50,85,70,34,85,95]),
+  mk("Minion","🟡","images/minion.png",[58,45,42,80,76,50,55]),
+  mk("Elsa","❄️","images/elsa.png",[52,60,76,78,58,70,30]),
+  mk("Barbie","💗","images/barbie.png",[50,30,72,90,72,62,35]),
+  mk("Gru","🧔","images/gru.png",[48,55,90,86,52,58,70]),
+  mk("SpongeBob","🧽","images/spongebob.png",[46,50,46,95,92,66,40]),
+  mk("Mr. Bean","🤵","images/bean.png",[44,25,58,92,30,40,20]),
+  mk("Shrek","🟩","images/shrek.png",[40,92,54,60,66,76,15]),
+  mk("Dumbledore","🧙","images/dumbledore.png",[36,35,99,74,68,84,50])
 ];
 
 // Penalty sentences (42). Add your own: { text: "... {blank} ... (adjective)", answer: "..." }
@@ -402,10 +436,17 @@ let selectingForTeam=1, currentGrammarAnswer="", penaltyTeamNum=0;
 
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}}
 function formatScore(s){return s%1===0?s.toString():s.toFixed(1);}
+function syncTopbar(){
+  const b=document.getElementById('top-bar');
+  const h=b.classList.contains('hidden')?0:b.offsetHeight;
+  document.documentElement.style.setProperty('--topbar-h',h+'px');
+}
+window.addEventListener('resize',syncTopbar);
 function updateTopBar(){
   document.getElementById('score1-display').innerText=`${team1Name}: ${formatScore(team1Score)}`;
   document.getElementById('score2-display').innerText=`${team2Name}: ${formatScore(team2Score)}`;
   document.getElementById('round-display').innerText=`Round ${Math.min(currentRound,maxRounds)} / ${maxRounds}`;
+  syncTopbar();
 }
 function showScreen(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
@@ -541,6 +582,7 @@ function goToHubOrEnd(){
 function endGame(){
   document.getElementById('top-bar').classList.add('hidden');
   document.getElementById('menu-btn').classList.add('hidden');
+  syncTopbar();
   showScreen('end-screen');
   let t;
   if(team1Score>team2Score) t=`${team1Name} WINS! 🏆`;
@@ -578,6 +620,7 @@ function backToMenu(){
   ['modal-overlay','chars-overlay'].forEach(id=>document.getElementById(id).classList.add('hidden'));
   document.getElementById('top-bar').classList.add('hidden');
   document.getElementById('menu-btn').classList.add('hidden');
+  syncTopbar();
   showScreen('start-screen');
 }
 const TEAM_NAMES=["Thunder Dragons","Pixel Ninjas","Turbo Tigers","Epic Wizards","Neon Wolves","Super Sloths",
