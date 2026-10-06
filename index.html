@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Game Character Battle</title>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
-  <link rel="icon" type="image/svg+xml" sizes="any"        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚔️</text></svg>"/>
+<link rel="icon" type="image/svg+xml" sizes="any"        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚔️</text></svg>"/>
+<style>
 <style>
 :root{
   --topbar-h:0px;
@@ -328,9 +329,10 @@ const characters = [
   mk("Scrat","🐿️","images/scrat.png",[74,35,38,66,100,30,75]),
   mk("Mario","🍄","images/mario.png",[72,82,62,64,88,90,40]),
   mk("T-Rex","🦖","images/trex.png",[70,95,20,10,40,78,5]),
+  mk("Steve","🧱","images/steve.png",[68,70,84,100,62,87,52]),
   mk("Batman","🦇","images/batman.png",[66,80,96,88,65,95,100]),
   mk("Jack Sparrow","🏴‍☠️","images/sparrow.png",[64,40,88,99,98,86,65]),
-  mk("Impostor","👾","images/impostor.png",[62,50,85,70,75,85,95]),
+  mk("Impostor","👾","images/impostor.png",[62,50,85,70,34,85,95]),
   mk("Minion","🟡","images/minion.png",[58,45,42,80,76,50,55]),
   mk("Elsa","❄️","images/elsa.png",[52,60,76,78,58,70,30]),
   mk("Barbie","💗","images/barbie.png",[50,30,72,90,72,62,35]),
@@ -433,6 +435,7 @@ let currentRound=0; const maxRounds=7;
 let availableStats=[...STATS], currentStat="";
 let team1SelectedChar=null, team2SelectedChar=null;
 let team1UsedChars=new Set(), team2UsedChars=new Set();
+let penaltyDone=false; // prevents double-click awarding the penalty point twice
 let selectingForTeam=1, currentGrammarAnswer="", penaltyTeamNum=0;
 
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}}
@@ -553,6 +556,8 @@ function revealWinner(){
 // ---- penalty ----
 function goToPenalty(){
   playSound('click');
+  penaltyDone=false;
+  document.getElementById('btn-next').classList.add('hidden');
   if(penaltyTeamNum===0){goToHubOrEnd();return;}
   const task=grammarTasks[currentRound%grammarTasks.length];
   currentGrammarAnswer=task.answer;
@@ -572,6 +577,9 @@ function revealAnswer(){
   document.getElementById('penalty-judge').classList.remove('hidden');
 }
 function resolvePenalty(ok){
+  if(penaltyDone) return; // already judged
+  penaltyDone=true;
+  document.getElementById('penalty-judge').classList.add('hidden');
   if(ok){playSound('win');if(penaltyTeamNum===1)team1Score+=.5;else team2Score+=.5;updateTopBar();}
   else playSound('lose');
   setTimeout(goToHubOrEnd,500);
